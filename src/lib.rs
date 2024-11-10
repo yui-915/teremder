@@ -1,9 +1,9 @@
 #![feature(const_float_methods)]
 
-use std::io::Write;
+use std::{io::Write, time::Duration};
 
-use crossterm::{cursor, queue, style, terminal};
-use num_traits::{cast::AsPrimitive, FromPrimitive};
+use crossterm::{event::*, *};
+use num_traits::{AsPrimitive, FromPrimitive};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Color {
@@ -140,26 +140,29 @@ impl Default for Context {
 
 impl Drop for Context {
     fn drop(&mut self) {
-        queue!(
+        execute!(
             std::io::stdout(),
             cursor::Show,
             style::ResetColor,
             terminal::LeaveAlternateScreen,
         )
         .unwrap();
+        terminal::disable_raw_mode().unwrap();
     }
 }
 
 impl Context {
     pub fn new() -> Self {
-        queue!(
+        terminal::enable_raw_mode().unwrap();
+        execute!(
             std::io::stdout(),
             cursor::Hide,
             terminal::EnterAlternateScreen,
+            PushKeyboardEnhancementFlags(KeyboardEnhancementFlags::all()),
         )
         .unwrap();
 
-        let (width, height) = crossterm::terminal::size().unwrap();
+        let (width, height) = terminal::size().unwrap();
 
         let mut display_buffer = Vec2::new(width as usize, height as usize * 2);
         let drawing_buffer = display_buffer.clone();
@@ -169,8 +172,7 @@ impl Context {
             display_buffer,
             drawing_buffer,
         };
-        ctx.begin_drawing();
-        ctx.end_drawing();
+        ctx.next_frame();
         ctx
     }
 
@@ -197,7 +199,12 @@ impl Context {
 
     pub fn begin_drawing(&mut self) {}
 
-    pub fn end_drawing(&mut self) {
+    pub fn next_frame(&mut self) {
+        self.commit_drawing_buffer_to_display();
+        self.handle_events();
+    }
+
+    pub fn commit_drawing_buffer_to_display(&mut self) {
         let mut stdout = std::io::stdout();
         // queue!(stdout, terminal::BeginSynchronizedUpdate).unwrap();
         for y in 0..self.height() {
@@ -255,6 +262,20 @@ impl Context {
             b: color.b,
         });
     }
+
+    pub fn handle_events(&mut self) {
+        while event::poll(Duration::from_millis(0)).unwrap() {
+            let ev = event::read().unwrap();
+            match ev {
+                Event::Key(key) => {
+                    if key.code == KeyCode::Char('c') && key.modifiers == KeyModifiers::CONTROL {
+                        exit_app();
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
 }
 
 static mut CONTEXT: Option<Context> = None;
@@ -283,8 +304,8 @@ pub fn begin_drawing() {
     ctx().begin_drawing();
 }
 
-pub fn end_drawing() {
-    ctx().end_drawing();
+pub fn next_frame() {
+    ctx().next_frame();
 }
 
 pub fn fill_rect<X, Y, W, H>(x: X, y: Y, width: W, height: H, color: Color)
