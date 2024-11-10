@@ -1,4 +1,4 @@
-use crate::{Color, Context};
+use crate::{Color, Context, MouseButton};
 use num_traits::{AsPrimitive, FromPrimitive};
 
 static mut CONTEXT: Option<Context> = None;
@@ -56,6 +56,15 @@ where
     T::from_u16(ctx().screen_height()).unwrap()
 }
 
+pub fn mouse_position<X, Y>() -> (X, Y)
+where
+    X: FromPrimitive,
+    Y: FromPrimitive,
+{
+    let (x, y) = ctx().mouse_position();
+    (X::from_u16(x).unwrap(), Y::from_u16(y).unwrap())
+}
+
 pub fn clear_background(color: Color) {
     ctx().clear_background(color);
 }
@@ -66,4 +75,20 @@ pub fn exit_app() {
         CONTEXT.take(); // drop if any
     }
     std::process::exit(0);
+}
+
+pub fn is_mouse_button_down(button: MouseButton) -> bool {
+    ctx().is_mouse_button_down(button)
+}
+
+pub fn is_mouse_button_pressed(button: MouseButton) -> bool {
+    ctx().is_mouse_button_pressed(button)
+}
+
+pub fn is_mouse_button_released(button: MouseButton) -> bool {
+    ctx().is_mouse_button_released(button)
+}
+
+pub fn mouse_positions<'a>() -> &'a [(u16, u16)] {
+    ctx().mouse_positions()
 }

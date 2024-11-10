@@ -13,6 +13,28 @@ impl<T: Default + Copy> Vec2<T> {
             height,
         }
     }
+
+    pub fn resize(&mut self, width: usize, height: usize, value: T) {
+        let mut new = Vec2::new(width, height);
+        for x in 0..self.width.max(width) {
+            if x >= width {
+                break;
+            }
+            for y in 0..self.height.max(height) {
+                if y >= height {
+                    break;
+                }
+                let x = x as u16;
+                let y = y as u16;
+                if x < self.width as u16 && y < self.height as u16 {
+                    new.set(x, y, self.get(x, y).clone());
+                } else {
+                    new.set(x, y, value);
+                }
+            }
+        }
+        *self = new;
+    }
 }
 
 impl<T: Clone> Vec2<T> {

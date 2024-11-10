@@ -1,6 +1,7 @@
 #![feature(const_float_methods)]
 
 use crossterm::{event::*, *};
+use enumset::{EnumSet, EnumSetType};
 use std::{io::Write, time::Duration};
 
 mod color;
@@ -12,9 +13,46 @@ use vec2::Vec2;
 mod api;
 pub use api::*;
 
+#[derive(Debug, EnumSetType)]
+pub enum MouseButton {
+    Left,
+    Right,
+    Middle,
+}
+
+impl From<event::MouseButton> for MouseButton {
+    fn from(btn: event::MouseButton) -> Self {
+        match btn {
+            event::MouseButton::Left => MouseButton::Left,
+            event::MouseButton::Right => MouseButton::Right,
+            event::MouseButton::Middle => MouseButton::Middle,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+struct State {
+    mouse_position: (u16, u16),
+    mouse_positions: Vec<(u16, u16)>,
+    mouse_buttons: EnumSet<MouseButton>,
+}
+
+impl Default for State {
+    fn default() -> Self {
+        Self {
+            mouse_position: (0, 0),
+            mouse_positions: Vec::new(),
+            mouse_buttons: EnumSet::empty(),
+        }
+    }
+}
+
 pub struct Context {
     display_buffer: Vec2<Pixel>,
     drawing_buffer: Vec2<Pixel>,
+
+    previous_state: State,
+    current_state: State,
 }
 
 impl Default for Context {
@@ -30,6 +68,7 @@ impl Drop for Context {
             cursor::Show,
             style::ResetColor,
             terminal::LeaveAlternateScreen,
+            event::DisableMouseCapture,
         )
         .unwrap();
         terminal::disable_raw_mode().unwrap();
@@ -44,6 +83,7 @@ impl Context {
             cursor::Hide,
             terminal::EnterAlternateScreen,
             PushKeyboardEnhancementFlags(KeyboardEnhancementFlags::all()),
+            event::EnableMouseCapture,
         )
         .unwrap();
 
@@ -56,6 +96,9 @@ impl Context {
         let mut ctx = Self {
             display_buffer,
             drawing_buffer,
+
+            previous_state: State::default(),
+            current_state: State::default(),
         };
         ctx.next_frame();
         ctx
@@ -149,6 +192,8 @@ impl Context {
     }
 
     pub fn handle_events(&mut self) {
+        self.previous_state = self.current_state.clone();
+        self.current_state.mouse_positions.clear();
         while event::poll(Duration::from_millis(0)).unwrap() {
             let ev = event::read().unwrap();
             match ev {
@@ -157,8 +202,81 @@ impl Context {
                         exit_app();
                     }
                 }
+                Event::Mouse(mouse) => self.handle_mouse_event(mouse),
+                Event::Resize(width, height) => self.handle_resize_event(width, height),
                 _ => {}
             }
         }
+        if self.current_state.mouse_positions.is_empty() {
+            self.current_state
+                .mouse_positions
+                .push(self.current_state.mouse_position);
+        }
+    }
+
+    pub fn handle_resize_event(&mut self, width: u16, height: u16) {
+        self.display_buffer.resize(
+            width as usize,
+            height as usize * 2,
+            Pixel { r: 1, g: 2, b: 3 },
+        );
+        self.drawing_buffer.resize(
+            width as usize,
+            height as usize * 2,
+            Pixel { r: 0, g: 0, b: 0 },
+        );
+        self.commit_drawing_buffer_to_display();
+    }
+
+    pub fn handle_mouse_event(&mut self, event: MouseEvent) {
+        match event.kind {
+            MouseEventKind::Down(btn) => {
+                self.current_state.mouse_buttons.insert(btn.into());
+            }
+            MouseEventKind::Up(btn) => {
+                self.current_state.mouse_buttons.remove(btn.into());
+            }
+            MouseEventKind::Moved => {
+                self.current_state.mouse_position.0 = event.column;
+                self.current_state.mouse_position.1 = event.row * 2;
+                self.current_state
+                    .mouse_positions
+                    .push(self.current_state.mouse_position);
+            }
+            MouseEventKind::Drag(btn) => {
+                self.current_state.mouse_buttons.insert(btn.into());
+
+                self.current_state.mouse_position.0 = event.column;
+                self.current_state.mouse_position.1 = event.row * 2;
+                self.current_state
+                    .mouse_positions
+                    .push(self.current_state.mouse_position);
+            }
+            _ => {
+                eprintln!("unhandled mouse event: {:?}", event);
+            }
+        }
+    }
+
+    pub fn is_mouse_button_down(&self, btn: MouseButton) -> bool {
+        self.current_state.mouse_buttons.contains(btn)
+    }
+
+    pub fn is_mouse_button_pressed(&self, btn: MouseButton) -> bool {
+        self.current_state.mouse_buttons.contains(btn)
+            && !self.previous_state.mouse_buttons.contains(btn)
+    }
+
+    pub fn is_mouse_button_released(&self, btn: MouseButton) -> bool {
+        !self.current_state.mouse_buttons.contains(btn)
+            && self.previous_state.mouse_buttons.contains(btn)
+    }
+
+    pub fn mouse_position(&self) -> (u16, u16) {
+        self.current_state.mouse_position
+    }
+
+    pub fn mouse_positions(&self) -> &[(u16, u16)] {
+        &self.current_state.mouse_positions
     }
 }
