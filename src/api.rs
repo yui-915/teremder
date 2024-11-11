@@ -92,3 +92,7 @@ pub fn is_mouse_button_released(button: MouseButton) -> bool {
 pub fn mouse_positions<'a>() -> &'a [(u16, u16)] {
     ctx().mouse_positions()
 }
+
+pub fn set_target_fps(fps: u16) {
+    ctx().set_target_fps(fps);
+}

@@ -2,7 +2,10 @@
 
 use crossterm::{event::*, *};
 use enumset::{EnumSet, EnumSetType};
-use std::{io::Write, time::Duration};
+use std::{
+    io::Write,
+    time::{Duration, Instant},
+};
 
 mod color;
 pub use color::*;
@@ -35,6 +38,8 @@ struct State {
     mouse_position: (u16, u16),
     mouse_positions: Vec<(u16, u16)>,
     mouse_buttons: EnumSet<MouseButton>,
+
+    time: Instant,
 }
 
 impl Default for State {
@@ -43,6 +48,8 @@ impl Default for State {
             mouse_position: (0, 0),
             mouse_positions: Vec::new(),
             mouse_buttons: EnumSet::empty(),
+
+            time: Instant::now(),
         }
     }
 }
@@ -53,6 +60,7 @@ pub struct Context {
 
     previous_state: State,
     current_state: State,
+    target_fps: u16,
 }
 
 impl Default for Context {
@@ -99,8 +107,9 @@ impl Context {
 
             previous_state: State::default(),
             current_state: State::default(),
+            target_fps: u16::MAX,
         };
-        ctx.next_frame();
+        ctx.commit_drawing_buffer_to_display();
         ctx
     }
 
@@ -130,6 +139,22 @@ impl Context {
     pub fn next_frame(&mut self) {
         self.commit_drawing_buffer_to_display();
         self.handle_events();
+        self.cap_fps();
+    }
+
+    pub fn cap_fps(&mut self) {
+        let now = Instant::now();
+        let elapsed = now - self.previous_state.time;
+        let sleep_time = Duration::from_micros(1_000_000 / self.target_fps as u64);
+        if elapsed < sleep_time {
+            let sleep_time = sleep_time - elapsed;
+            std::thread::sleep(sleep_time);
+        }
+        self.current_state.time = now;
+    }
+
+    pub fn set_target_fps(&mut self, fps: u16) {
+        self.target_fps = fps;
     }
 
     pub fn commit_drawing_buffer_to_display(&mut self) {
