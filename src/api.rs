@@ -3,10 +3,25 @@ use num_traits::{AsPrimitive, FromPrimitive};
 
 static mut CONTEXT: Option<Context> = None;
 pub fn ctx() -> &'static mut Context {
+    #![allow(static_mut_refs)]
     unsafe {
-        #[allow(static_mut_refs)]
-        CONTEXT.get_or_insert_with(Context::new)
+        if CONTEXT.is_none() {
+            let _ = CONTEXT.insert(Context::new());
+            setup_panic_hook();
+        }
+        CONTEXT.as_mut().unwrap()
     }
+}
+
+pub fn setup_panic_hook() {
+    let default_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        unsafe {
+            #[allow(static_mut_refs)]
+            CONTEXT.take(); // drop if any
+        }
+        default_hook(info);
+    }));
 }
 
 macro_rules! numify {

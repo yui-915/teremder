@@ -1,5 +1,5 @@
 #[derive(Debug, Clone)]
-pub(crate) struct Vec2<T> {
+pub struct Vec2<T> {
     data: Vec<T>,
     width: usize,
     height: usize,
@@ -7,15 +7,29 @@ pub(crate) struct Vec2<T> {
 
 impl<T: Default + Copy> Vec2<T> {
     pub fn new(width: usize, height: usize) -> Self {
+        Self::new_with(width, height, T::default())
+    }
+
+    pub fn resize(&mut self, width: usize, height: usize) {
+        self.resize_with(width, height, T::default())
+    }
+}
+
+impl<T: Clone> Vec2<T> {
+    pub fn new_with(width: usize, height: usize, value: T) -> Self {
         Self {
-            data: vec![T::default(); width * height],
+            data: vec![value; width * height],
             width,
             height,
         }
     }
 
-    pub fn resize(&mut self, width: usize, height: usize, value: T) {
-        let mut new = Vec2::new(width, height);
+    pub fn fill(&mut self, value: T) {
+        self.data.fill(value);
+    }
+
+    pub fn resize_with(&mut self, width: usize, height: usize, value: T) {
+        let mut new = Vec2::new_with(width, height, value.clone());
         for x in 0..self.width.max(width) {
             if x >= width {
                 break;
@@ -29,17 +43,11 @@ impl<T: Default + Copy> Vec2<T> {
                 if x < self.width as u16 && y < self.height as u16 {
                     new.set(x, y, self.get(x, y).clone());
                 } else {
-                    new.set(x, y, value);
+                    new.set(x, y, value.clone());
                 }
             }
         }
         *self = new;
-    }
-}
-
-impl<T: Clone> Vec2<T> {
-    pub fn fill(&mut self, value: T) {
-        self.data.fill(value);
     }
 }
 
