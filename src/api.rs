@@ -38,10 +38,6 @@ where
     ctx().set_pixel(x, y, color);
 }
 
-pub fn begin_drawing() {
-    ctx().begin_drawing();
-}
-
 pub fn next_frame() {
     ctx().next_frame();
 }

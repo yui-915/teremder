@@ -1,8 +1,10 @@
 #![feature(const_float_methods)]
 
-use crossterm::{event::*, *};
-use enumset::{EnumSet, EnumSetType};
-use num_traits::AsPrimitive;
+use crossterm::{
+    event::{KeyboardEnhancementFlags, PushKeyboardEnhancementFlags},
+    *,
+};
+use enumset::EnumSet;
 use std::{
     io::Write,
     time::{Duration, Instant},
@@ -10,29 +12,16 @@ use std::{
 
 mod color;
 pub use color::*;
-
 mod vec2;
-pub use vec2::Vec2;
-
+pub use vec2::*;
 mod api;
 pub use api::*;
-
-#[derive(Debug, EnumSetType)]
-pub enum MouseButton {
-    Left,
-    Right,
-    Middle,
-}
-
-impl From<event::MouseButton> for MouseButton {
-    fn from(btn: event::MouseButton) -> Self {
-        match btn {
-            event::MouseButton::Left => MouseButton::Left,
-            event::MouseButton::Right => MouseButton::Right,
-            event::MouseButton::Middle => MouseButton::Middle,
-        }
-    }
-}
+mod sprite;
+pub use sprite::*;
+mod mouse;
+pub use mouse::*;
+mod drawing;
+mod events;
 
 #[derive(Debug, Clone)]
 struct State {
@@ -122,21 +111,6 @@ impl Context {
         self.display_buffer.height() / 2
     }
 
-    pub fn set_pixel(&mut self, x: u16, y: u16, color: Color) {
-        // TODO: alpha
-        self.drawing_buffer.set(
-            x,
-            y,
-            Pixel {
-                r: color.r,
-                g: color.g,
-                b: color.b,
-            },
-        );
-    }
-
-    pub fn begin_drawing(&mut self) {}
-
     pub fn next_frame(&mut self) {
         self.commit_drawing_buffer_to_display();
         self.handle_events();
@@ -158,209 +132,11 @@ impl Context {
         self.target_fps = fps;
     }
 
-    pub fn commit_drawing_buffer_to_display(&mut self) {
-        let mut stdout = std::io::stdout();
-        // queue!(stdout, terminal::BeginSynchronizedUpdate).unwrap();
-        for y in 0..self.height() {
-            for x in 0..self.width() {
-                let fg = self.drawing_buffer.get(x, y * 2);
-                let bg = self.drawing_buffer.get(x, y * 2 + 1);
-                if fg == self.display_buffer.get(x, y * 2)
-                    && bg == self.display_buffer.get(x, y * 2 + 1)
-                {
-                    continue;
-                }
-                queue!(
-                    stdout,
-                    cursor::MoveTo(x, y),
-                    style::SetForegroundColor(fg.into()),
-                    style::SetBackgroundColor(bg.into()),
-                    style::Print('▀'),
-                )
-                .unwrap();
-            }
-        }
-        // queue!(stdout, terminal::EndSynchronizedUpdate).unwrap();
-        self.display_buffer = self.drawing_buffer.clone();
-        stdout.flush().unwrap();
-    }
-
-    pub fn fill_rect(&mut self, x: u16, y: u16, width: u16, height: u16, color: Color) {
-        let x_end = x + width;
-        let y_end = y + height;
-        for x in x..x_end {
-            if x >= self.drawing_buffer.width() {
-                break;
-            }
-            for y in y..y_end {
-                if y >= self.drawing_buffer.height() {
-                    break;
-                }
-                self.set_pixel(x, y, color);
-            }
-        }
-    }
-
     pub fn screen_width(&self) -> u16 {
         self.drawing_buffer.width()
     }
 
     pub fn screen_height(&self) -> u16 {
         self.drawing_buffer.height()
-    }
-
-    pub fn clear_background(&mut self, color: Color) {
-        self.drawing_buffer.fill(Pixel {
-            r: color.r,
-            g: color.g,
-            b: color.b,
-        });
-    }
-
-    pub fn handle_events(&mut self) {
-        self.previous_state = self.current_state.clone();
-        self.current_state.mouse_positions.clear();
-        while event::poll(Duration::from_millis(0)).unwrap() {
-            let ev = event::read().unwrap();
-            match ev {
-                Event::Key(key) => {
-                    if key.code == KeyCode::Char('c') && key.modifiers == KeyModifiers::CONTROL {
-                        exit_app();
-                    }
-                }
-                Event::Mouse(mouse) => self.handle_mouse_event(mouse),
-                Event::Resize(width, height) => self.handle_resize_event(width, height),
-                _ => {}
-            }
-        }
-        if self.current_state.mouse_positions.is_empty() {
-            self.current_state
-                .mouse_positions
-                .push(self.current_state.mouse_position);
-        }
-    }
-
-    pub fn handle_resize_event(&mut self, width: u16, height: u16) {
-        self.display_buffer.resize_with(
-            width as usize,
-            height as usize * 2,
-            Pixel { r: 1, g: 2, b: 3 },
-        );
-        self.drawing_buffer.resize_with(
-            width as usize,
-            height as usize * 2,
-            Pixel { r: 0, g: 0, b: 0 },
-        );
-        self.commit_drawing_buffer_to_display();
-    }
-
-    pub fn handle_mouse_event(&mut self, event: MouseEvent) {
-        match event.kind {
-            MouseEventKind::Down(btn) => {
-                self.current_state.mouse_buttons.insert(btn.into());
-            }
-            MouseEventKind::Up(btn) => {
-                self.current_state.mouse_buttons.remove(btn.into());
-            }
-            MouseEventKind::Moved => {
-                self.current_state.mouse_position.0 = event.column;
-                self.current_state.mouse_position.1 = event.row * 2;
-                self.current_state
-                    .mouse_positions
-                    .push(self.current_state.mouse_position);
-            }
-            MouseEventKind::Drag(btn) => {
-                self.current_state.mouse_buttons.insert(btn.into());
-
-                self.current_state.mouse_position.0 = event.column;
-                self.current_state.mouse_position.1 = event.row * 2;
-                self.current_state
-                    .mouse_positions
-                    .push(self.current_state.mouse_position);
-            }
-            _ => {
-                eprintln!("unhandled mouse event: {:?}", event);
-            }
-        }
-    }
-
-    pub fn is_mouse_button_down(&self, btn: MouseButton) -> bool {
-        self.current_state.mouse_buttons.contains(btn)
-    }
-
-    pub fn is_mouse_button_pressed(&self, btn: MouseButton) -> bool {
-        self.current_state.mouse_buttons.contains(btn)
-            && !self.previous_state.mouse_buttons.contains(btn)
-    }
-
-    pub fn is_mouse_button_released(&self, btn: MouseButton) -> bool {
-        !self.current_state.mouse_buttons.contains(btn)
-            && self.previous_state.mouse_buttons.contains(btn)
-    }
-
-    pub fn mouse_position(&self) -> (u16, u16) {
-        self.current_state.mouse_position
-    }
-
-    pub fn mouse_positions(&self) -> &[(u16, u16)] {
-        &self.current_state.mouse_positions
-    }
-}
-
-pub struct Sprite {
-    data: Vec2<Color>,
-}
-
-impl Sprite {
-    pub fn new(width: u16, height: u16) -> Self {
-        let mut data = Vec2::new_with(width as usize, height as usize, Color::rgba(0, 0, 0, 0));
-        data.fill(Color::rgba(0, 0, 0, 0));
-        Self { data }
-    }
-
-    pub fn set_pixel(&mut self, x: u16, y: u16, color: Color) {
-        self.data.set(x, y, color);
-    }
-
-    pub fn get_pixel(&self, x: u16, y: u16) -> Color {
-        *self.data.get(x, y)
-    }
-
-    pub fn width(&self) -> u16 {
-        self.data.width()
-    }
-
-    pub fn height(&self) -> u16 {
-        self.data.height()
-    }
-
-    pub fn resize(&mut self, width: u16, height: u16) {
-        self.data
-            .resize_with(width as usize, height as usize, Color::rgba(0, 0, 0, 0));
-    }
-
-    pub fn draw<X, Y>(&self, x: X, y: Y)
-    where
-        X: AsPrimitive<u16>,
-        Y: AsPrimitive<u16>,
-    {
-        self.draw_with_ctx(ctx(), x.as_(), y.as_());
-    }
-
-    pub fn draw_with_ctx(&self, ctx: &mut Context, x: u16, y: u16) {
-        for local_x in 0..self.width() {
-            let x = x + local_x;
-            if x >= ctx.screen_width() {
-                break;
-            }
-            for local_y in 0..self.height() {
-                let y = y + local_y;
-                if y >= ctx.screen_height() {
-                    break;
-                }
-                let color = self.get_pixel(local_x, local_y);
-                ctx.set_pixel(x, y, color);
-            }
-        }
     }
 }
