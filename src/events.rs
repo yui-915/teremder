@@ -1,5 +1,5 @@
-use crate::{exit_app, Context, Pixel};
-use crossterm::event::{self, Event, KeyCode, KeyModifiers};
+use crate::{Context, Pixel};
+use crossterm::event::{self, Event};
 use std::time::Duration;
 
 impl Context {
@@ -9,11 +9,7 @@ impl Context {
         while event::poll(Duration::from_millis(0)).unwrap() {
             let ev = event::read().unwrap();
             match ev {
-                Event::Key(key) => {
-                    if key.code == KeyCode::Char('c') && key.modifiers == KeyModifiers::CONTROL {
-                        exit_app();
-                    }
-                }
+                Event::Key(key) => self.handle_keyboard_event(key),
                 Event::Mouse(mouse) => self.handle_mouse_event(mouse),
                 Event::Resize(width, height) => self.handle_resize_event(width, height),
                 _ => {}

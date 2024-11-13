@@ -5,21 +5,26 @@ use crossterm::{
     *,
 };
 use enumset::EnumSet;
-use std::{
-    io::Write,
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 
 mod color;
 pub use color::*;
+
 mod vec2;
 pub use vec2::*;
+
 mod api;
 pub use api::*;
+
 mod sprite;
 pub use sprite::*;
+
 mod mouse;
 pub use mouse::*;
+
+mod keyboard;
+pub use keyboard::*;
+
 mod drawing;
 mod events;
 
@@ -28,6 +33,8 @@ struct State {
     mouse_position: (u16, u16),
     mouse_positions: Vec<(u16, u16)>,
     mouse_buttons: EnumSet<MouseButton>,
+
+    keys_down: EnumSet<Key>,
 
     time: Instant,
 }
@@ -38,6 +45,8 @@ impl Default for State {
             mouse_position: (0, 0),
             mouse_positions: Vec::new(),
             mouse_buttons: EnumSet::empty(),
+
+            keys_down: EnumSet::empty(),
 
             time: Instant::now(),
         }
@@ -50,7 +59,9 @@ pub struct Context {
 
     previous_state: State,
     current_state: State,
+
     target_fps: u16,
+    exit_key_combo: EnumSet<Key>,
 }
 
 impl Default for Context {
@@ -66,6 +77,7 @@ impl Drop for Context {
             cursor::Show,
             style::ResetColor,
             terminal::LeaveAlternateScreen,
+            event::PopKeyboardEnhancementFlags,
             event::DisableMouseCapture,
         )
         .unwrap();
@@ -98,6 +110,7 @@ impl Context {
             previous_state: State::default(),
             current_state: State::default(),
             target_fps: u16::MAX,
+            exit_key_combo: Key::LeftControl | Key::C,
         };
         ctx.commit_drawing_buffer_to_display();
         ctx
@@ -112,9 +125,23 @@ impl Context {
     }
 
     pub fn next_frame(&mut self) {
-        self.commit_drawing_buffer_to_display();
         self.handle_events();
+        self.check_exit_key_combo();
+        self.commit_drawing_buffer_to_display();
         self.cap_fps();
+    }
+
+    pub fn check_exit_key_combo(&mut self) {
+        if self.current_state.keys_down & self.exit_key_combo == self.exit_key_combo {
+            exit_app();
+        }
+    }
+
+    pub fn set_exit_key_combo<I>(&mut self, keys: I)
+    where
+        I: IntoIterator<Item = Key>,
+    {
+        self.exit_key_combo = keys.into_iter().collect();
     }
 
     pub fn cap_fps(&mut self) {

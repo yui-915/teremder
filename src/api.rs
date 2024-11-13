@@ -1,4 +1,4 @@
-use crate::{Color, Context, MouseButton};
+use crate::{Color, Context, Key, MouseButton};
 use num_traits::{AsPrimitive, FromPrimitive};
 
 static mut CONTEXT: Option<Context> = None;
@@ -106,4 +106,23 @@ pub fn mouse_positions<'a>() -> &'a [(u16, u16)] {
 
 pub fn set_target_fps(fps: u16) {
     ctx().set_target_fps(fps);
+}
+
+pub fn is_key_down(key: Key) -> bool {
+    ctx().is_key_down(key)
+}
+
+pub fn is_key_pressed(key: Key) -> bool {
+    ctx().is_key_pressed(key)
+}
+
+pub fn is_key_released(key: Key) -> bool {
+    ctx().is_key_released(key)
+}
+
+pub fn set_exit_key_combo<I>(keys: I)
+where
+    I: IntoIterator<Item = Key>,
+{
+    ctx().set_exit_key_combo(keys);
 }
