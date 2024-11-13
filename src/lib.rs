@@ -65,6 +65,7 @@ pub struct Context {
 
     target_fps: u16,
     exit_key_combo: EnumSet<Key>,
+    exit_hook: Option<Box<dyn FnOnce(bool)>>,
 }
 
 impl Default for Context {
@@ -114,6 +115,7 @@ impl Context {
             current_state: State::default(),
             target_fps: u16::MAX,
             exit_key_combo: Key::LeftControl | Key::C,
+            exit_hook: None,
         };
         ctx.commit_drawing_buffer_to_display();
         ctx
@@ -136,7 +138,7 @@ impl Context {
 
     pub fn check_exit_key_combo(&mut self) {
         if self.current_state.keys_down & self.exit_key_combo == self.exit_key_combo {
-            exit_app();
+            exit_app(false);
         }
     }
 
@@ -168,5 +170,12 @@ impl Context {
 
     pub fn screen_height(&self) -> u16 {
         self.drawing_buffer.height()
+    }
+
+    pub fn set_exit_hook<F>(&mut self, hook: F)
+    where
+        F: FnOnce(bool) + 'static,
+    {
+        self.exit_hook = Some(Box::new(hook));
     }
 }

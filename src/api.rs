@@ -16,10 +16,7 @@ pub fn ctx() -> &'static mut Context {
 pub fn setup_panic_hook() {
     let default_hook = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
-        unsafe {
-            #[allow(static_mut_refs)]
-            CONTEXT.take(); // drop if any
-        }
+        exit_app(true);
         default_hook(info);
     }));
 }
@@ -80,12 +77,23 @@ pub fn clear_background(color: Color) {
     ctx().clear_background(color);
 }
 
-pub fn exit_app() {
+pub fn exit_app(panic: bool) {
+    let mut hook = None;
     unsafe {
         #[allow(static_mut_refs)]
-        CONTEXT.take(); // drop if any
+        if let Some(context) = CONTEXT.take().as_mut() {
+            if let Some(exit_hook) = context.exit_hook.take() {
+                hook = Some(exit_hook);
+            }
+        };
     }
-    std::process::exit(0);
+
+    if let Some(hook) = hook {
+        hook(panic);
+    }
+    if !panic {
+        std::process::exit(0);
+    }
 }
 
 pub fn is_mouse_button_down(button: MouseButton) -> bool {
@@ -125,4 +133,11 @@ where
     I: IntoIterator<Item = Key>,
 {
     ctx().set_exit_key_combo(keys);
+}
+
+pub fn set_exit_hook<F>(hook: F)
+where
+    F: FnOnce(bool) + 'static,
+{
+    ctx().set_exit_hook(hook);
 }
