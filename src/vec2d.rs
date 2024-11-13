@@ -1,11 +1,11 @@
 #[derive(Debug, Clone)]
-pub struct Vec2<T> {
+pub struct Vec2d<T> {
     data: Vec<T>,
     width: usize,
     height: usize,
 }
 
-impl<T: Default + Copy> Vec2<T> {
+impl<T: Default + Copy> Vec2d<T> {
     pub fn new(width: usize, height: usize) -> Self {
         Self::new_with(width, height, T::default())
     }
@@ -15,7 +15,7 @@ impl<T: Default + Copy> Vec2<T> {
     }
 }
 
-impl<T: Clone> Vec2<T> {
+impl<T: Clone> Vec2d<T> {
     pub fn new_with(width: usize, height: usize, value: T) -> Self {
         Self {
             data: vec![value; width * height],
@@ -29,7 +29,7 @@ impl<T: Clone> Vec2<T> {
     }
 
     pub fn resize_with(&mut self, width: usize, height: usize, value: T) {
-        let mut new = Vec2::new_with(width, height, value.clone());
+        let mut new = Vec2d::new_with(width, height, value.clone());
         for x in 0..self.width.max(width) {
             if x >= width {
                 break;
@@ -51,7 +51,7 @@ impl<T: Clone> Vec2<T> {
     }
 }
 
-impl<T> Vec2<T> {
+impl<T> Vec2d<T> {
     pub fn get(&self, x: u16, y: u16) -> &T {
         &self.data[y as usize * self.width + x as usize]
     }

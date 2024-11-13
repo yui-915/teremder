@@ -1,13 +1,13 @@
-use crate::{ctx, Color, Context, Vec2};
+use crate::{ctx, Color, Context, Vec2d};
 use num_traits::AsPrimitive;
 
 pub struct Sprite {
-    data: Vec2<Color>,
+    data: Vec2d<Color>,
 }
 
 impl Sprite {
     pub fn new(width: u16, height: u16) -> Self {
-        let mut data = Vec2::new_with(width as usize, height as usize, Color::rgba(0, 0, 0, 0));
+        let mut data = Vec2d::new_with(width as usize, height as usize, Color::rgba(0, 0, 0, 0));
         data.fill(Color::rgba(0, 0, 0, 0));
         Self { data }
     }

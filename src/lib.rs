@@ -10,8 +10,8 @@ use std::time::{Duration, Instant};
 mod color;
 pub use color::*;
 
-mod vec2;
-pub use vec2::*;
+mod vec2d;
+pub use vec2d::*;
 
 mod api;
 pub use api::*;
@@ -24,6 +24,9 @@ pub use mouse::*;
 
 mod keyboard;
 pub use keyboard::*;
+
+mod math;
+pub use math::*;
 
 mod drawing;
 mod events;
@@ -54,8 +57,8 @@ impl Default for State {
 }
 
 pub struct Context {
-    display_buffer: Vec2<Pixel>,
-    drawing_buffer: Vec2<Pixel>,
+    display_buffer: Vec2d<Pixel>,
+    drawing_buffer: Vec2d<Pixel>,
 
     previous_state: State,
     current_state: State,
@@ -99,7 +102,7 @@ impl Context {
 
         let (width, height) = terminal::size().unwrap();
 
-        let mut display_buffer = Vec2::new(width as usize, height as usize * 2);
+        let mut display_buffer = Vec2d::new(width as usize, height as usize * 2);
         let drawing_buffer = display_buffer.clone();
         display_buffer.fill(Pixel { r: 1, g: 2, b: 3 });
 
