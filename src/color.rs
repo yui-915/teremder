@@ -71,12 +71,37 @@ impl Color {
     }
 }
 
-pub const RED: Color = Color::rgb(255, 0, 0);
-pub const GREEN: Color = Color::rgb(0, 255, 0);
-pub const BLUE: Color = Color::rgb(0, 0, 255);
-pub const BLACK: Color = Color::rgb(0, 0, 0);
-pub const WHITE: Color = Color::rgb(255, 255, 255);
-pub const YELLOW: Color = Color::rgb(255, 255, 0);
-pub const CYAN: Color = Color::rgb(0, 255, 255);
-pub const MAGENTA: Color = Color::rgb(255, 0, 255);
-pub const GRAY: Color = Color::rgb(128, 128, 128);
+macro_rules! def {
+    {$($name:ident($($value:expr),*);)*} => {$(
+        pub const $name: Color = Color::rgb($($value),*);
+    )*}
+}
+
+// based on raylib
+def! {
+    LIGHTGRAY  (200, 200, 200);
+    GRAY       (130, 130, 130);
+    DARKGRAY   (80,  80,  80 );
+    YELLOW     (253, 249, 0  );
+    GOLD       (255, 203, 0  );
+    ORANGE     (255, 161, 0  );
+    PINK       (255, 109, 194);
+    RED        (230, 41,  55 );
+    MAROON     (190, 33,  55 );
+    GREEN      (0,   228, 48 );
+    LIME       (0,   158, 47 );
+    DARKGREEN  (0,   117, 44 );
+    SKYBLUE    (102, 191, 255);
+    BLUE       (0,   121, 241);
+    DARKBLUE   (0,   82,  172);
+    PURPLE     (200, 122, 255);
+    VIOLET     (135, 60,  190);
+    DARKPURPLE (112, 31,  126);
+    BEIGE      (211, 176, 131);
+    BROWN      (127, 106, 79 );
+    DARKBROWN  (76,  63,  47 );
+    WHITE      (255, 255, 255);
+    BLACK      (0,   0,   0  );
+    MAGENTA    (255, 0,   255);
+}
+pub const BLANK: Color = Color::rgba(0, 0, 0, 0);
