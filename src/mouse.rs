@@ -30,8 +30,8 @@ impl Context {
                 self.current_state.mouse_buttons.remove(btn.into());
             }
             MouseEventKind::Moved => {
-                self.current_state.mouse_position.0 = event.column;
-                self.current_state.mouse_position.1 = event.row * 2;
+                self.current_state.mouse_position.0 = event.column as f32;
+                self.current_state.mouse_position.1 = event.row as f32 * 2.;
                 self.current_state
                     .mouse_positions
                     .push(self.current_state.mouse_position);
@@ -39,8 +39,8 @@ impl Context {
             MouseEventKind::Drag(btn) => {
                 self.current_state.mouse_buttons.insert(btn.into());
 
-                self.current_state.mouse_position.0 = event.column;
-                self.current_state.mouse_position.1 = event.row * 2;
+                self.current_state.mouse_position.0 = event.column as f32;
+                self.current_state.mouse_position.1 = event.row as f32 * 2.;
                 self.current_state
                     .mouse_positions
                     .push(self.current_state.mouse_position);
@@ -65,11 +65,11 @@ impl Context {
             && self.previous_state.mouse_buttons.contains(btn)
     }
 
-    pub fn mouse_position(&self) -> (u16, u16) {
+    pub fn mouse_position(&self) -> (f32, f32) {
         self.current_state.mouse_position
     }
 
-    pub fn mouse_positions(&self) -> &[(u16, u16)] {
+    pub fn mouse_positions(&self) -> &[(f32, f32)] {
         &self.current_state.mouse_positions
     }
 }

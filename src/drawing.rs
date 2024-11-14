@@ -6,8 +6,8 @@ impl Context {
     pub fn commit_drawing_buffer_to_display(&mut self) {
         let mut stdout = std::io::stdout();
         // queue!(stdout, terminal::BeginSynchronizedUpdate).unwrap();
-        for y in 0..self.height() {
-            for x in 0..self.width() {
+        for y in 0..self.height() as usize {
+            for x in 0..self.width() as usize {
                 let fg = self.drawing_buffer.get(x, y * 2);
                 let bg = self.drawing_buffer.get(x, y * 2 + 1);
                 if fg == self.display_buffer.get(x, y * 2)
@@ -17,7 +17,7 @@ impl Context {
                 }
                 queue!(
                     stdout,
-                    cursor::MoveTo(x, y),
+                    cursor::MoveTo(x as u16, y as u16),
                     style::SetForegroundColor(fg.into()),
                     style::SetBackgroundColor(bg.into()),
                     style::Print('▀'),
@@ -30,11 +30,11 @@ impl Context {
         stdout.flush().unwrap();
     }
 
-    pub fn set_pixel(&mut self, x: u16, y: u16, color: Color) {
+    pub fn set_pixel(&mut self, x: f32, y: f32, color: Color) {
         // TODO: alpha
         self.drawing_buffer.set(
-            x,
-            y,
+            x as usize,
+            y as usize,
             Pixel {
                 r: color.r,
                 g: color.g,
@@ -43,7 +43,8 @@ impl Context {
         );
     }
 
-    pub fn fill_rect(&mut self, x: u16, y: u16, width: u16, height: u16, color: Color) {
+    pub fn fill_rect(&mut self, x: f32, y: f32, width: f32, height: f32, color: Color) {
+        let (x, y, width, height) = (x as usize, y as usize, width as usize, height as usize);
         let x_end = x + width;
         let y_end = y + height;
         for x in x..x_end {
@@ -54,7 +55,7 @@ impl Context {
                 if y >= self.drawing_buffer.height() {
                     break;
                 }
-                self.set_pixel(x, y, color);
+                self.set_pixel(x as f32, y as f32, color);
             }
         }
     }

@@ -38,9 +38,7 @@ impl<T: Clone> Vec2d<T> {
                 if y >= height {
                     break;
                 }
-                let x = x as u16;
-                let y = y as u16;
-                if x < self.width as u16 && y < self.height as u16 {
+                if x < self.width && y < self.height {
                     new.set(x, y, self.get(x, y).clone());
                 } else {
                     new.set(x, y, value.clone());
@@ -52,23 +50,23 @@ impl<T: Clone> Vec2d<T> {
 }
 
 impl<T> Vec2d<T> {
-    pub fn get(&self, x: u16, y: u16) -> &T {
-        &self.data[y as usize * self.width + x as usize]
+    pub fn get(&self, x: usize, y: usize) -> &T {
+        &self.data[y * self.width + x]
     }
 
-    pub fn get_mut(&mut self, x: u16, y: u16) -> &mut T {
-        &mut self.data[y as usize * self.width + x as usize]
+    pub fn get_mut(&mut self, x: usize, y: usize) -> &mut T {
+        &mut self.data[y * self.width + x]
     }
 
-    pub fn set(&mut self, x: u16, y: u16, value: T) {
+    pub fn set(&mut self, x: usize, y: usize, value: T) {
         *self.get_mut(x, y) = value;
     }
 
-    pub fn width(&self) -> u16 {
-        self.width as u16
+    pub fn width(&self) -> usize {
+        self.width
     }
 
-    pub fn height(&self) -> u16 {
-        self.height as u16
+    pub fn height(&self) -> usize {
+        self.height
     }
 }

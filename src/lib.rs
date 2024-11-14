@@ -5,6 +5,7 @@ use crossterm::{
     *,
 };
 use enumset::EnumSet;
+use rand::{distributions::uniform::SampleUniform, rngs::ThreadRng, thread_rng, Rng};
 use std::time::{Duration, Instant};
 
 mod color;
@@ -33,8 +34,8 @@ mod events;
 
 #[derive(Debug, Clone)]
 struct State {
-    mouse_position: (u16, u16),
-    mouse_positions: Vec<(u16, u16)>,
+    mouse_position: (f32, f32),
+    mouse_positions: Vec<(f32, f32)>,
     mouse_buttons: EnumSet<MouseButton>,
 
     keys_down: EnumSet<Key>,
@@ -45,7 +46,7 @@ struct State {
 impl Default for State {
     fn default() -> Self {
         Self {
-            mouse_position: (0, 0),
+            mouse_position: (0., 0.),
             mouse_positions: Vec::new(),
             mouse_buttons: EnumSet::empty(),
 
@@ -63,9 +64,10 @@ pub struct Context {
     previous_state: State,
     current_state: State,
 
-    target_fps: u16,
+    target_fps: f32,
     exit_key_combo: EnumSet<Key>,
     exit_hook: Option<Box<dyn FnOnce(bool)>>,
+    rng: ThreadRng,
 }
 
 impl Default for Context {
@@ -113,20 +115,21 @@ impl Context {
 
             previous_state: State::default(),
             current_state: State::default(),
-            target_fps: u16::MAX,
+            target_fps: f32::MAX,
             exit_key_combo: Key::LeftControl | Key::C,
             exit_hook: None,
+            rng: thread_rng(),
         };
         ctx.commit_drawing_buffer_to_display();
         ctx
     }
 
-    pub fn width(&self) -> u16 {
-        self.display_buffer.width()
+    pub fn width(&self) -> f32 {
+        self.display_buffer.width() as f32
     }
 
-    pub fn height(&self) -> u16 {
-        self.display_buffer.height() / 2
+    pub fn height(&self) -> f32 {
+        (self.display_buffer.height() / 2) as f32
     }
 
     pub fn next_frame(&mut self) {
@@ -152,7 +155,7 @@ impl Context {
     pub fn cap_fps(&mut self) {
         let now = Instant::now();
         let elapsed = now - self.previous_state.time;
-        let sleep_time = Duration::from_micros(1_000_000 / self.target_fps as u64);
+        let sleep_time = Duration::from_micros((1_000_000. / self.target_fps) as u64);
         if elapsed < sleep_time {
             let sleep_time = sleep_time - elapsed;
             std::thread::sleep(sleep_time);
@@ -160,16 +163,16 @@ impl Context {
         self.current_state.time = now;
     }
 
-    pub fn set_target_fps(&mut self, fps: u16) {
+    pub fn set_target_fps(&mut self, fps: f32) {
         self.target_fps = fps;
     }
 
-    pub fn screen_width(&self) -> u16 {
-        self.drawing_buffer.width()
+    pub fn screen_width(&self) -> f32 {
+        self.drawing_buffer.width() as f32
     }
 
-    pub fn screen_height(&self) -> u16 {
-        self.drawing_buffer.height()
+    pub fn screen_height(&self) -> f32 {
+        self.drawing_buffer.height() as f32
     }
 
     pub fn set_exit_hook<F>(&mut self, hook: F)
@@ -177,5 +180,12 @@ impl Context {
         F: FnOnce(bool) + 'static,
     {
         self.exit_hook = Some(Box::new(hook));
+    }
+
+    pub fn rng<T>(&mut self, min: T, max: T) -> T
+    where
+        T: std::cmp::PartialOrd + SampleUniform,
+    {
+        self.rng.gen_range(min..=max)
     }
 }
