@@ -67,4 +67,45 @@ impl Context {
             b: color.b,
         });
     }
+
+    pub fn fill_circle(&mut self, x: f32, y: f32, radius: f32, color: Color) {
+        for mx in 0..self.drawing_buffer.width() {
+            for my in 0..self.drawing_buffer.height() {
+                let ox = mx as f32 - x;
+                let oy = my as f32 - y;
+                let d = (ox * ox + oy * oy).sqrt();
+                if d < radius {
+                    self.set_pixel(mx as f32, my as f32, color);
+                }
+            }
+        }
+    }
+
+    pub fn fill_triangle(
+        &mut self,
+        x1: f32,
+        y1: f32,
+        x2: f32,
+        y2: f32,
+        x3: f32,
+        y3: f32,
+        color: Color,
+    ) {
+        let area = |x1: f32, y1: f32, x2: f32, y2: f32, x3: f32, y3: f32| {
+            ((x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)) / 2.0).abs()
+        };
+        for mx in 0..self.drawing_buffer.width() {
+            for my in 0..self.drawing_buffer.height() {
+                let x = mx as f32;
+                let y = my as f32;
+                let a = area(x1, y1, x2, y2, x3, y3);
+                let b = area(x, y, x2, y2, x3, y3);
+                let c = area(x1, y1, x, y, x3, y3);
+                let d = area(x1, y1, x2, y2, x, y);
+                if a == b + c + d {
+                    self.set_pixel(mx as f32, my as f32, color);
+                }
+            }
+        }
+    }
 }

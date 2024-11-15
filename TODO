@@ -1,9 +1,13 @@
+Next:
+- more shapes (line,circle, triangle, polygon, ellipse, arc, hexagon, etc ...)
+- "stroke" shapes (only draw outlines)
+- a function to draw shapes from their math struct instead of raw numbers (smth like macroquad 0.5 builder pattern)
+- some sort of "animate" function that works with anything using lerp
+
 Todo:
 - improve sprites api (scaling, rotation, better cration and modification, filtering, etc ...)
 - save/load sprites from files
-- more shapes (line,circle, triangle, polygon, ellipse, arc, hexagon, etc ...)
 - custom shapes (just triangles ?)
-- "stroke" shapes (only draw outlines)
 - extended shapes api (rotation, gradient, etc ...)
 - colors with transparency
 - sound library 
@@ -19,8 +23,6 @@ Todo:
 - examples
 - tests
 - event based input api
-- async ?! 
-- web support ?!?!!?!?!
 - no panics ? 
 - ui (buttons, boxes, etc ...)
 - betters types system
@@ -34,11 +36,18 @@ Todo:
 - textures (basically sprites?)
 - "keyboard input" (text) (maybe just the event-based api)
 - a way to create child contexts (virtual windows)
+- anti-aliasing
+- get enumset of all keys down (to use with "match" for directional movement)
+- const, no nightly features
 
 Partially done:
-- math library (vector, box, etc ...) with operator overloading and collision detection
+- math library (vector, box, etc ...) with operator overloading and collision detection (needs more shapes)
 - randmosness
 - make everything f32
 
 Done:
 - more const colors
+
+Removed: 
+- web support ?!?!!?!?! (there aint no way I'm dealing with the async hell that is javascript's event loop)
+- async ?! (WHY)

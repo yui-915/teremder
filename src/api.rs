@@ -119,3 +119,11 @@ where
 {
     ctx().rng(min, max)
 }
+
+pub fn fill_circle(x: f32, y: f32, radius: f32, color: Color) {
+    ctx().fill_circle(x, y, radius, color);
+}
+
+pub fn fill_triangle(x1: f32, y1: f32, x2: f32, y2: f32, x3: f32, y3: f32, color: Color) {
+    ctx().fill_triangle(x1, y1, x2, y2, x3, y3, color);
+}
