@@ -19,6 +19,7 @@ Next:
 - some sort of "animate" function that works with anything using lerp
 
 Todo:
+- leftShift not working ?
 - save/load sprites from files
 - custom shapes (just triangles ?)
 - extended shapes api (rotation, gradient, etc ...)
