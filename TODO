@@ -1,11 +1,24 @@
+Games:
+- pong
+- tic tac toe
+- paint
+- snake
+- tetris
+- asteroids
+- arkanoid
+- 2048
+- Conway's game of life
+- simple platformer
+
 Next:
-- more shapes (line,circle, triangle, polygon, ellipse, arc, hexagon, etc ...)
+- improve sprites api (scaling, rotation, better cration and modification, filtering, etc ...)
+- more shapes (line, circle, triangle, polygon, ellipse, arc, hexagon, etc ...)
+- fix triangle math (when points are aligned)
 - "stroke" shapes (only draw outlines)
 - a function to draw shapes from their math struct instead of raw numbers (smth like macroquad 0.5 builder pattern)
 - some sort of "animate" function that works with anything using lerp
 
 Todo:
-- improve sprites api (scaling, rotation, better cration and modification, filtering, etc ...)
 - save/load sprites from files
 - custom shapes (just triangles ?)
 - extended shapes api (rotation, gradient, etc ...)
@@ -36,9 +49,13 @@ Todo:
 - textures (basically sprites?)
 - "keyboard input" (text) (maybe just the event-based api)
 - a way to create child contexts (virtual windows)
+- masking virtual windows
 - anti-aliasing
 - get enumset of all keys down (to use with "match" for directional movement)
 - const, no nightly features
+- partical system?
+- 3d ?!?!??!
+- clean exit (for some reason lazygit picks up keyboard enhancment flags)
 
 Partially done:
 - math library (vector, box, etc ...) with operator overloading and collision detection (needs more shapes)
@@ -51,3 +68,4 @@ Done:
 Removed: 
 - web support ?!?!!?!?! (there aint no way I'm dealing with the async hell that is javascript's event loop)
 - async ?! (WHY)
+- make vec2 functions work with any type that can be converted to vec2, both owned and borrowed (idk)

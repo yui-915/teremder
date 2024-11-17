@@ -393,3 +393,27 @@ impl_ops! {
     Mul mul MulAssign mul_assign |a, b| (a.x * b.x, a.y * b.y);
     Div div DivAssign div_assign |a, b| (a.x / b.x, a.y / b.y);
 }
+
+impl From<[f32; 2]> for Vec2 {
+    fn from(v: [f32; 2]) -> Self {
+        Self::new(v[0], v[1])
+    }
+}
+
+impl From<Vec2> for [f32; 2] {
+    fn from(v: Vec2) -> Self {
+        [v.x, v.y]
+    }
+}
+
+impl From<(f32, f32)> for Vec2 {
+    fn from(v: (f32, f32)) -> Self {
+        Self::new(v.0, v.1)
+    }
+}
+
+impl From<Vec2> for (f32, f32) {
+    fn from(v: Vec2) -> Self {
+        (v.x, v.y)
+    }
+}
