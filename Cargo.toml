@@ -12,3 +12,7 @@ rand = "0.8.5"
 [[example]]
 name = "paint"
 path = "examples/paint.rs"
+
+[[example]]
+name = "input_test"
+path = "examples/input_test.rs"
